@@ -151,7 +151,10 @@ def print_explanation(data, data_m, options):
             print(_c('\n  Examples:', 'cyan'))
             print(*[
                 '     * {0}\n       {1}'.format(
-                    _c(ep[0][2:], 'yellow'), _c(ep[1], 'magenta')
+                    _c(ep[0][0], 'yellow') +
+                    _c(ep[0][1], ('yellow', 'bold')) +
+                    _c(ep[0][2], 'yellow'),
+                    _c(ep[1], 'magenta')
             ) for ep in (eps if options.full else eps[:3])], sep='\n')
 
         # Online resources
@@ -173,9 +176,11 @@ def parse_ep(data_m):
     if len(listtrans) > 0:
         for li in listtrans[0].findAll(name='li'):
             resps.append([
-                "".join([hp.unescape(i.string) for i in li.contents[:-2]]),
+                [hp.unescape(i.string) for i in li.contents[:-2]],
                 hp.unescape(li.contents[-1].contents[0].string)
             ])
+        for i in xrange(len(resps)):
+            resps[i][0][0] = resps[i][0][0][(i+1)/10 + 2:]
     return resps
 
 def lookup_word(word):
