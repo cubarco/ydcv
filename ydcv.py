@@ -145,7 +145,7 @@ def print_explanation(data, data_m, options):
             print(*[
                 '     * {0}\n       {1}'.format(
                     _c(ep[0][2:], 'yellow'), _c(ep[1], 'magenta')
-                ) for ep in eps], sep='\n')
+            ) for ep in (eps if options.full else eps[:3])], sep='\n')
 
         # Online resources
         ol_res = online_resources(query)
@@ -163,8 +163,8 @@ def parse_ep(data_m):
     hp = HTMLParser()
     listtrans = BeautifulSoup(data_m).findAll(id="listtrans")
     resps = []
-    if len(listtrans) >= 2:
-        for li in listtrans[1].findAll(name='li'):
+    if len(listtrans) > 0:
+        for li in listtrans[0].findAll(name='li'):
             resps.append([
                 "".join([hp.unescape(i.string) for i in li.contents[:-2]]),
                 hp.unescape(li.contents[-1].contents[0].string)
@@ -179,7 +179,7 @@ def lookup_word(word):
             "key={1}&type=data&doctype=json&version=1.1&q={2}"
             .format(API, API_KEY, word)).read().decode("utf-8")
         data_m = urlopen(
-            "http://dict.youdao.com/m/{0}/".format(word)
+            "http://dict.youdao.com/m/{0}/example.html".format(word)
             ).read().decode("utf-8")
     except IOError:
         print("Network is unavailable")
@@ -192,8 +192,8 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--full',
                         action="store_true",
                         default=False,
-                        help="print full web reference, only the first 3 "
-                             "results will be printed without this flag.")
+                        help="print full web reference and exemples, only the "
+                             "first 3 results will be printed without this flag.")
     parser.add_argument('-s', '--simple',
                         action="store_true",
                         default=False,
