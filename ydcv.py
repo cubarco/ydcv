@@ -63,16 +63,23 @@ class Colorizing(object):
     }
 
     @classmethod
-    def colorize(cls, s, color=None):
+    def colorize(cls, s, colors=None):
         if options.color == 'never':
             return s
         if options.color == 'auto' and not sys.stdout.isatty():
             return s
-        if color in cls.colors:
+        if isinstance(colors, tuple):
             return "{0}{1}{2}".format(
-                cls.colors[color], s, cls.colors['default'])
+                "".join(
+                    [cls.colors[color] for color in colors if color in cls.colors]
+                    ), s, cls.colors['default']
+                )
         else:
-            return s
+            if colors in cls.colors:
+                return "{0}{1}{2}".format(
+                    cls.colors[colors], s, cls.colors['default'])
+            else:
+                return s
 
 
 def online_resources(query):
