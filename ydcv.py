@@ -15,12 +15,16 @@ except ImportError:
 
 try:
     #Py3
-    from urllib.parse import quote
+    from urllib.parse import quote, unquote
     from urllib.request import urlopen
     from html.parser import HTMLParser
+
+    def unichr(text):
+        return chr(text)
+
 except ImportError:
     #Py 2.7
-    from urllib import quote
+    from urllib import quote, unquote
     from urllib2 import urlopen
     from HTMLParser import HTMLParser
     reload(sys)
@@ -206,6 +210,33 @@ def lookup_word(word):
     else:
         print_explanation(json.loads(data), data_m, options)
 
+def unquote_u(text):
+    def unicode_unquoter(match):
+        return unichr(int(match.group(1), 16))
+    return re.sub(r'%u([0-9a-fA-F]{4})', unicode_unquoter, text)
+
+def suggestions(word):
+    query = quote(word)
+    _c = Colorizing.colorize
+    try:
+        data = urlopen(
+            'http://dsuggest.ydstatic.com/suggest/suggest.s?query={}'
+            .format(query)).read().decode('utf-8')
+    except IOError:
+        print("Network is unavailable")
+    else:
+        html_content = re.findall('aa.updateCall\("(.*)"\);', data)[0]
+        html_content = unquote_u(unquote(html_content))
+        trs = BeautifulSoup(html_content).findAll(attrs={'onselect': True})[1:]
+        print(_c(word, 'underline'))
+        if len(trs) != 0:
+            print(_c('  Suggestions:', 'cyan'))
+            print(*['     * {}'.format(_c(tr.text, 'yellow'))
+                    for tr in trs], sep='\n')
+        else:
+            print(_c('  No suggestion.', 'cyan'))
+
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Youdao Console Version")
@@ -223,6 +254,10 @@ if __name__ == "__main__":
                         action="store_true",
                         default=False,
                         help="show explaination of current selection. ")
+    parser.add_argument('-l', '--list-suggestions',
+                        action="store_true", dest='suggestions',
+                        default=False,
+                        help="list suggestions according to the given words. ")
     parser.add_argument('--color',
                         choices=['always', 'auto', 'never'],
                         default='auto',
@@ -235,7 +270,10 @@ if __name__ == "__main__":
 
     if options.words:
         for word in options.words:
-            lookup_word(word)
+            if options.suggestions:
+                suggestions(word)
+            else:
+                lookup_word(word)
     else:
         if options.selection:
             last=check_output(["xclip", "-o"], universal_newlines=True)
